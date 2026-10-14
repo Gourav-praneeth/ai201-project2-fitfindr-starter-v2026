@@ -59,24 +59,26 @@
 
 ### `search_listings`
 
-- **What it does:**
-- **Inputs:** <!-- name and type each: `max_price` (float), not "a price" -->
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Filters the 40 listings in `data/listings.json` by price ceiling and size, scores what is left by keyword overlap with the description, and returns the best matches. It does not call the model.
+- **Inputs:** `description` (str, keywords such as "vintage graphic tee"); `size` (str | None, default None, skip size filtering); `max_price` (float | None, default None, skip price filtering, inclusive).
+  - *Size match:* split the listing's `size` on whitespace, `/`, and parentheses, lowercase the pieces, and match only if every piece of the requested size is among them. So "M" matches `M`, `S/M`, and `M/L`, but not `XL` or `W30 L30`. "8" matches `US 8` but not `US 8.5`. "One Size" listings match only when the user asks for "one size".
+  - *Keyword score:* lowercase `description` and split it into words. Each word scores 1 if it appears in the listing's `title`, `description`, `category`, `style_tags`, or `colors`. Listings scoring 0 are dropped.
+- **Returns:** A `list[dict]` of at most `config.SEARCH_RESULT_LIMIT` (10) listing dicts, highest score first, ties in file order. Each dict is the full listing record: `id`, `title`, `description`, `category`, `style_tags` (list), `size`, `condition`, `price` (float), `colors` (list), `brand` (str or None), `platform`. Nothing is added or removed.
+- **When it has nothing:** Returns `[]`. It never returns None, an error string, or an exception, including when the filters exclude everything.
 
 ### `suggest_outfit`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Asks the model for one or two outfits built around the thrifted item, using the pieces in the user's wardrobe.
+- **Inputs:** `new_item` (dict, one listing dict as returned by `search_listings`); `wardrobe` (dict, shape `{"items": [...]}`, where each item has `id`, `name`, `category`, `colors`, `style_tags`, and `notes` (str or None)).
+- **Returns:** A non-empty `str` of plain text holding one or two outfit suggestions. With a non-empty wardrobe, each outfit names specific pieces the user already owns, using their `name` values. The string never starts with an error marker.
+- **When it has nothing:** If `wardrobe["items"]` is empty, it does not fail. It returns general styling advice for the item, with no reference to owned pieces. It never returns `""`. If the model is unavailable, `generate.ModelUnavailable` propagates to the loop and is not swallowed here.
 
 ### `create_fit_card`
 
-- **What it does:**
-- **Inputs:**
-- **Returns:**
-- **When it has nothing:**
+- **What it does:** Asks the model for a short social-post caption about the find, based on the item and the outfit suggestion.
+- **Inputs:** `outfit` (str, the text returned by `suggest_outfit`); `new_item` (dict, the same listing dict).
+- **Returns:** A `str` of two to four sentences written like a real post. It mentions the item, its `price`, and its `platform` once each. It does not require `brand`, which may be None. Repeated calls on the same input should come out differently, so `CACHE_ENABLED` and `TEMPERATURE` in `config.py` must allow variation.
+- **When it has nothing:** If `outfit` is empty or whitespace-only, it makes no model call and returns the fixed message `"No outfit to write a caption for."`. It does not raise and it does not return `""`.
 
 ---
 
@@ -93,7 +95,7 @@
      The grader checks your code against what you claim here, so the file and
      function have to be real. -->
 
-**Branch rule:**
+**Branch rule:** If `search_listings` returns an empty list, set `session["error"]` to a message saying nothing matched (including the parsed description, size, and price), and stop. `suggest_outfit` and `create_fit_card` are not called. Otherwise, put the first result in `session["selected_item"]`, call `suggest_outfit` with it and the wardrobe, then call `create_fit_card` with the outfit string and the same item. An empty wardrobe is not a branch. `suggest_outfit` handles it and the loop continues as normal.
 
 **Where it lives:** `agent.py::run_agent`
 
