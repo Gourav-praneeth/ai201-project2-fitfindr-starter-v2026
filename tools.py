@@ -211,10 +211,12 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
         return "No outfit to write a caption for."
     prompt = (
         "Write a 2-4 sentence social media caption, like a real post and not a product description, "
-        "about a thrift find.\n"
-        f"Item: {new_item['title']}\nPrice: ${new_item['price']:.0f}\nPlatform: {new_item['platform']}\n"
+        "from the point of view of a shopper who just BOUGHT this secondhand find.\n"
+        f"Item: {new_item['title']}\nPrice paid: ${new_item['price']:.0f}\nBought on: {new_item['platform']}\n"
         f"Outfit idea: {outfit}\n\n"
-        "Mention the item, its price and the platform once each, and be specific about the vibe. "
+        "The poster is the buyer, not the seller: never say they listed it, are selling it, or that it is "
+        "on 'my' shop, page or closet, and never tell readers to grab it. "
+        "Mention the item, the price paid and the platform once each, and be specific about the vibe. "
         "Return only the caption."
     )
     return generate(prompt, cache=False).strip() or "No caption could be written for this item."

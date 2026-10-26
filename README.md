@@ -199,17 +199,31 @@ No outfit to write a caption for.
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. A matching query completes all three tools | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. An impossible query stops before the second tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Same item reaches every tool | 5 of 5 | PASS† | PASS† | PASS† | PASS† | PASS† | NOT VERIFIABLE as written (see below) |
+| 4. Fit card across 5 items (columns are items A–E, try 1 of each) | 4 of 5, no shared opener | PASS | PASS | PASS | PASS | PASS | MET (5/5, 5 distinct openers) |
+| 5. Empty wardrobe completes | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| _Diagnostic, not one of the five: fit cards that read as a seller's post_ | none wanted | | | | | | **29 of 40 cards** |
 
-**Real output from one try**, pasted as text, naming the file and function
-that produced it:
+† Passed on indirect evidence only: the selected item's title appears in the outfit suggestion in all five tries. The trace does not show the id (see Diagnoses).
+
+Source: `results/run_2026-10-25_2212_before.md`, scored with a script that reads that file. The model-based checks (sentence count, price, platform) are string checks, so a price written as "thirty bucks" fails the price check even though it is present; I checked by hand where a score looked odd.
+
+**Real output from one try** — `run_eval.py` calling `agent.py::run_agent`, whose last step is `tools.py::create_fit_card`. Query: `vintage graphic tee under $30`, example wardrobe.
 
 ```
+selected_item: Y2K Baby Tee — Butterfly Print ($18.0, depop)
 
+outfit_suggestion:
+**Outfit 1: Y2K Streetwear Contrast**
+Pair the Y2K Baby Tee — Butterfly Print with the baggy straight-leg jeans, dark wash for a classic early 2000s silhouette. Cinch the waist with the brown leather belt, and layer the vintage black denim jacket on top. Finish the look with the chunky white sneakers and the black crossbody bag for an effortless everyday vibe.
+
+**Outfit 2: Casual Edgy Mix**
+Combine the Y2K Baby Tee — Butterfly Print with the wide-leg khaki trousers to blend cottagecore and earth-tone aesthetics. Throw on the black cropped zip hoodie for easy layering, and step into the black combat boots to add a touch of grunge edge.
+
+fit_card:
+Found this absolute gem of a butterfly print Y2K baby tee and I am obsessed. Snag it on my Depop right now for just $18 before I change my mind and keep it for myself. Style it with baggy denim and chunky sneakers for the ultimate nostalgic street vibe, or grunge it up with combat boots.
 ```
 
 ---
@@ -234,15 +248,19 @@ that produced it:
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Matching query completes all three tools | 4 of 5 | MET (5/5) | `session["error"]` was None and `fit_card` non-empty in all five tries of 'vintage graphic tee under $30'. |
+| 2 | Impossible query stops before the second tool | 5 of 5 | MET (5/5) | In all five tries the trace holds only `search_listings` then `branch`, and the error text names what to change ("raise your price limit", "try a different size"). |
+| 3 | Same item reaches every tool | 5 of 5 | NOT VERIFIABLE as written | The criterion says to compare ids. The trace prints `item_id` as "dict with keys: item_id, wardrobe_items", so the id is hidden. All five outfit suggestions name the selected item, which is indirect evidence only. |
+| 4 | Fit card across 5 items | 4 of 5, no shared opener | MET (5/5) | Try 1 of each of five items: all 2–4 sentences, all state price and platform, five different first sentences. |
+| 5 | Empty wardrobe completes | 5 of 5 | MET (5/5) | All five completed with a non-empty card and named no wardrobe piece. |
 
 **Diagnoses**
 
+*No criterion was missed on its own terms, and that is itself a finding: my criteria were too easy to miss in one respect.* Every one of my five passed, yet 29 of 40 fit cards in the before run read as a *seller's* post: "Snag it on my Depop right now for just $18 before I change my mind", "up now on my depop", "I just listed". The user is buying the item, so those captions are wrong for the product. None of my criteria asked whether the caption has the right point of view, so they could not see it.
 
+- **Where:** the model's output, in `tools.py::create_fit_card`. The tool ran correctly and the loop passed the right item.
+- **Mechanism:** the prompt gave the model `Price: $18` and `Platform: depop` as bare fields and said only "a thrift find". Price plus platform is the shape of a listing, so the model wrote the caption as the person who posted it. The prompt never said who the poster is.
+- **Criterion 3:** the loop does pass the right item (the outfit names it every time), but I cannot prove it from the trace, because `trace._short` collapses a dict without a `title` into its key names. That is a gap in my measurement, not a failure I can show in the tool.
 
 ---
 
@@ -286,24 +304,30 @@ full. -->
 
      `python run_eval.py --label after` -->
 
-**What I changed:**
+**What I changed:** one prompt, in `tools.py::create_fit_card`. It now says the poster is "a shopper who just BOUGHT this secondhand find", labels the fields `Price paid` and `Bought on`, and says the poster is the buyer, not the seller: never say they listed it or that it is on "my" shop, page or closet, and never tell readers to grab it. Nothing else changed between the two runs: same loop, same search, same temperature (0.9), same scenarios.
 
-**Which failure it was meant to fix:**
+**Which failure it was meant to fix:** the seller's-post framing in the model's output (29 of 40 cards before).
 
 ### Run Log — After
 
 | Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
 |---|---|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |  |  |
+| 1. A matching query completes all three tools | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. An impossible query stops before the second tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Same item reaches every tool | 5 of 5 | PASS† | PASS† | PASS† | PASS† | PASS† | NOT VERIFIABLE as written |
+| 4. Fit card across 5 items (columns are items A–E, try 1 of each) | 4 of 5, no shared opener | PASS | PASS | PASS | PASS | PASS | MET (5/5, 5 distinct openers) |
+| 5. Empty wardrobe completes | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| _Diagnostic: fit cards that read as a seller's post_ | none wanted | | | | | | **0 of 40 cards** |
 
-**Did it help, and how do I know:**
+Source: `results/run_2026-10-25_2218_after.md`.
 
-<!-- If it made things worse, say that. Honestly reported, that earns full
-     credit and is more interesting than one that worked. -->
+**Did it help, and how do I know:** Yes, on the thing it targeted. Seller-framed cards went from 29 of 40 to 0 of 40, counted with the same pattern list on the same 40 cards (8 scenarios that reach the fit card, 5 tries each). A caption now reads "Finally scored this Y2K butterfly print baby tee on Depop for just $18 and I am obsessed" where before it said "Snag it on my Depop right now". The five criteria did not move, because they were already met.
+
+What I can't claim:
+- **My counter is a pattern list, not a reader.** It could miss a seller-sounding caption phrased in a way I didn't list. I read a sample by hand and found none, but 0 of 40 means "none matched my patterns".
+- **It measures the model, which varies.** One run of 40 cards each side is enough to see 72% going to 0%, but it is not a precise rate.
+- **No regression that I found.** Sentence counts stayed at 24 of 25 in range both times. The one short card was two sentences my splitter missed, and the one card my price check failed wrote "thirty bucks", so the price was there.
+- **It did not touch the repeated openers.** Across the 40 cards, several still share a first few words ("Still pinching myself" 4 times, "Score!" 3 times), which my criterion 4 only forbids across five different items.
 
 
 
@@ -311,11 +335,11 @@ full. -->
 
 ## What's Still Broken
 
-<!-- For each criterion still missed: what you'd do, and why you stopped where
-     you did. "I ran out of time" is fine if it's true. Pretending nothing is
-     left is not. -->
-
-
+- **Criterion 3 can't be verified from the trace.** `trace._short` prints a dict without a `title` as its key names, so `item_id` never shows. The fix is one line (pass the id as a string, or put it in `note`). I left it because the milestone allows one change and the diagnosis that mattered was the caption. I'd also add the revision underneath criterion 3 in `criteria.md` rather than editing the original.
+- **My criteria don't test point of view.** Criterion 4 checks length, price, platform and distinct openers, so it passed a set of cards that were wrong for the user. I'd add "no caption reads as the seller" with a count.
+- **Repeated openers.** Across the 40 after-run cards, a few captions still open with the same words (see above). I'd raise the variety in the prompt, but didn't, to keep this to one change.
+- **The empty-search message is generic.** It names the description, size and price that were searched and suggests loosening each one that was set, but it can't say *which* of them caused the miss. I haven't tested whether users find it useful.
+- **Not done in this milestone:** the MCP move, the three failure modes, and the Loop Trace section. Those belong to earlier steps of this unit and are still empty in the README.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
