@@ -127,13 +127,23 @@ $ python -c "from tools import search_listings; print(search_listings('graphic t
 ```
 
 ```
-$ python -c "from tools import suggest_outfit; ..."
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
+**Outfit 1:** Vintage Levi's 501 Jeans — Medium Wash + White ribbed tank top + Chunky white sneakers + Black crossbody bag.
+**Outfit 2:** Vintage Levi's 501 Jeans — Medium Wash + Black cropped zip hoodie + Black combat boots + Brown leather belt.
 
+$ python -c "from tools import suggest_outfit; from utils.data_loader import get_empty_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_empty_wardrobe()))"
+**Outfit 1**: Pair the 501s with a crisp white T-shirt, a light denim jacket, and white low-top sneakers for a casual streetwear vibe. A canvas backpack or crossbody bag adds utility.
+**Outfit 2**: Tuck the jeans into a navy cable-knit sweater, layer with a charcoal bomber, and finish with brown leather loafers or brogues. A simple watch or leather belt ties the look together.
 ```
 
 ```
-$ python -c "from tools import create_fit_card; ..."
+$ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; [print(create_fit_card('jeans and white sneakers', load_listings()[0])) for _ in range(3)]"
+Snagged these Vintage Levi's 501 Jeans—Medium Wash for just $38 on Depop! I'm pairing them with crisp white sneakers for a laid-back, retro vibe that feels effortlessly cool. #thrifting #vintagefashion #jeansandwhitesneakers
+Just scored a Vintage Levi's 501 Jeans — Medium Wash for $38 on Depop – my new go-to for that effortless, street-ready vibe. Pair it with white sneakers and you're ready to roll into the weekend with classic cool.
+Just scored these vintage Levi's 501 jeans (medium wash) on Depop for only $38—talk about a retro vibe that's still totally on trend. Pair them with crisp white sneakers for a laid-back, street-style look that feels both nostalgic and fresh.
 
+$ python -c "...create_fit_card('  ', load_listings()[0])"
+No outfit to write a caption for.
 ```
 
 ---
