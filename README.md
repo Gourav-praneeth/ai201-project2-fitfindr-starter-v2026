@@ -128,19 +128,29 @@ $ python -c "from tools import search_listings; print(search_listings('graphic t
 
 ```
 $ python -c "from tools import suggest_outfit; from utils.data_loader import get_example_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_example_wardrobe()))"
-**Outfit 1:** Vintage Levi's 501 Jeans — Medium Wash + White ribbed tank top + Chunky white sneakers + Black crossbody bag.
-**Outfit 2:** Vintage Levi's 501 Jeans — Medium Wash + Black cropped zip hoodie + Black combat boots + Brown leather belt.
+**Outfit 1: Casual Streetwear**
+Pair the Vintage Levi's 501 Jeans with the fitted White ribbed tank top tucked in. Layer the Black cropped zip hoodie on top for a balanced silhouette, and finish the look with the Chunky white sneakers and the Black crossbody bag for an effortless, everyday vibe.
 
+**Outfit 2: Cozy Retro Layers**
+Style the Vintage Levi's 501 Jeans with the Brown leather belt. Throw on the Oversized grey crewneck sweatshirt for a relaxed, slouchy feel, and pair it with the Black combat boots for a touch of edge.
+```
+
+```
 $ python -c "from tools import suggest_outfit; from utils.data_loader import get_empty_wardrobe, load_listings; print(suggest_outfit(load_listings()[0], get_empty_wardrobe()))"
-**Outfit 1**: Pair the 501s with a crisp white T-shirt, a light denim jacket, and white low-top sneakers for a casual streetwear vibe. A canvas backpack or crossbody bag adds utility.
-**Outfit 2**: Tuck the jeans into a navy cable-knit sweater, layer with a charcoal bomber, and finish with brown leather loafers or brogues. A simple watch or leather belt ties the look together.
+Vintage Levi's 501s in medium wash are the ultimate foundation for effortless style.
+
+**Outfit 1: Casual Streetwear**
+Pair the jeans with a crisp, slightly oversized white crewneck t-shirt and a classic black leather belt. Layer a distressed charcoal grey zip-up hoodie over top, and finish the look with retro white leather sneakers and a canvas tote bag.
+
+**Outfit 2: Elevated Classic**
+Tuck a fitted black ribbed tank top or a sleek bodysuit into the waistband. Add an oversized plaid blazer in neutral earth tones, a structured brown leather belt, and pointed-toe black leather boots for a sharp, timeless contrast.
 ```
 
 ```
 $ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; [print(create_fit_card('jeans and white sneakers', load_listings()[0])) for _ in range(3)]"
-Snagged these Vintage Levi's 501 Jeans—Medium Wash for just $38 on Depop! I'm pairing them with crisp white sneakers for a laid-back, retro vibe that feels effortlessly cool. #thrifting #vintagefashion #jeansandwhitesneakers
-Just scored a Vintage Levi's 501 Jeans — Medium Wash for $38 on Depop – my new go-to for that effortless, street-ready vibe. Pair it with white sneakers and you're ready to roll into the weekend with classic cool.
-Just scored these vintage Levi's 501 jeans (medium wash) on Depop for only $38—talk about a retro vibe that's still totally on trend. Pair them with crisp white sneakers for a laid-back, street-style look that feels both nostalgic and fresh.
+Nothing beats the effortless 90s off-duty model vibe of a truly broken-in pair of vintage Levi's 501 jeans. Just scored this dreamy medium wash on depop for $38 and I'm pairing them with crisp white sneakers and a beat-up leather jacket all fall. 🤌✨
+Nothing beats the hunt for the ultimate pair of vintage Levi's 501 jeans, especially when you score them for just $38. Channeling that effortless 90s model-off-duty vibe—just add a crisp white tee and retro sneakers for the absolute easiest everyday uniform. Up now on my depop, so grab them before I change my mind and keep them!
+Nothing beats that worn-in 90s slouch. Just scored these vintage Levi's 501 jeans in the perfect medium wash on depop for $38, and they are about to become my entire personality. Honestly, just add crisp white sneakers and an oversized tee for the ultimate effortlessly cool off-duty model vibe. ✨👖
 
 $ python -c "...create_fit_card('  ', load_listings()[0])"
 No outfit to write a caption for.

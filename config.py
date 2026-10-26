@@ -64,9 +64,7 @@ SEARCH_RESULT_LIMIT = 10
 
 # ─── Model ───────────────────────────────────────────────────────────────────
 
-# With a Groq key the default is a Groq model; otherwise the starter's Gemini model.
-_DEFAULT_MODEL = "openai/gpt-oss-20b" if os.getenv("GROQ_API_KEY", "").strip() else "gemini-3.5-flash-lite"
-MODEL = os.getenv("AI201_MODEL", _DEFAULT_MODEL)
+MODEL = os.getenv("AI201_MODEL", "gemini-3.5-flash-lite")
 
 
 # ─── Rate limiting and quota guards ──────────────────────────────────────────

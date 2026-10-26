@@ -198,19 +198,6 @@ def _record_tokens(response) -> None:
         pass
 
 
-def _record_groq_tokens(response) -> None:
-    """Same job as _record_tokens, for Groq's `usage` object."""
-    global _prompt_tokens, _output_tokens
-    try:
-        usage = getattr(response, "usage", None)
-        if usage is None:
-            return
-        _prompt_tokens += int(usage.prompt_tokens or 0)
-        _output_tokens += int(usage.completion_tokens or 0)
-    except Exception:  # noqa: BLE001 — counting must never break a working call
-        pass
-
-
 # ─── The call ────────────────────────────────────────────────────────────────
 
 
@@ -219,9 +206,8 @@ def _explain(exc: Exception) -> str:
     message = str(exc).lower()
     if "api key" in message or "api_key" in message or "unauthenticated" in message:
         return (
-            "The model rejected your API key. Check "
-            + ("GROQ_API_KEY" if _use_groq() else "GEMINI_API_KEY")
-            + " in your .env file."
+            "The model rejected your API key. Check GEMINI_API_KEY in your .env "
+            "file, or create a fresh key at aistudio.google.com."
         )
     if "not found" in message or "404" in message:
         return (
@@ -255,18 +241,9 @@ def _retry_delay(exc: Exception, attempt: int) -> float:
     return min(65.0, max(2.0 ** attempt, hinted))
 
 
-def _use_groq() -> bool:
-    """Groq is used whenever GROQ_API_KEY is set; otherwise the starter's Gemini path runs."""
-    return bool(os.getenv("GROQ_API_KEY", "").strip())
-
-
 def _get_client():
     global _client
-    if _client is None and _use_groq():
-        from groq import Groq
-
-        _client = Groq(api_key=os.getenv("GROQ_API_KEY").strip())
-    elif _client is None:
+    if _client is None:
         from google import genai
 
         key = os.getenv("GEMINI_API_KEY", "").strip()
@@ -326,27 +303,18 @@ def generate(
             _call_times.append(time.monotonic())
             _session_calls += 1
 
-            if _use_groq():
-                messages = ([{"role": "system", "content": system}] if system else [])
-                messages.append({"role": "user", "content": prompt})
-                response = client.chat.completions.create(
-                    model=config.MODEL, messages=messages, temperature=temperature
-                )
-                _record_groq_tokens(response)
-                text = (response.choices[0].message.content or "").strip()
-            else:
-                call_config = {"temperature": temperature}
-                if system:
-                    call_config["system_instruction"] = system
-                kwargs = {
-                    "model": config.MODEL,
-                    "contents": prompt,
-                    "config": call_config,
-                }
+            call_config = {"temperature": temperature}
+            if system:
+                call_config["system_instruction"] = system
+            kwargs = {
+                "model": config.MODEL,
+                "contents": prompt,
+                "config": call_config,
+            }
 
-                response = client.models.generate_content(**kwargs)
-                _record_tokens(response)
-                text = (response.text or "").strip()
+            response = client.models.generate_content(**kwargs)
+            _record_tokens(response)
+            text = (response.text or "").strip()
 
             if use_cache:
                 _cache_write(key, text)
