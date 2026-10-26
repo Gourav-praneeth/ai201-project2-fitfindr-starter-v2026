@@ -222,14 +222,14 @@ No outfit to write a caption for.
 |---|---|---|---|---|---|---|---|
 | 1. A matching query completes all three tools | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 | 2. An impossible query stops before the second tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
-| 3. Same item reaches every tool | 5 of 5 | PASS† | PASS† | PASS† | PASS† | PASS† | NOT VERIFIABLE as written (see below) |
-| 4. Fit card across 5 items (columns are items A–E, try 1 of each) | 4 of 5, no shared opener | PASS | PASS | PASS | PASS | PASS | MET (5/5, 5 distinct openers) |
+| 3. Same item reaches every tool | 5 of 5 | n/m | n/m | n/m | n/m | n/m | NOT MEASURABLE (ids hidden in trace) |
+| 4. Fit cards for 5 items (each Try = the 5 items' cards from that try) | each set: ≥4 of 5 cards pass; no shared opener | PASS | PASS | PASS | PASS | PASS | MET (5/5 sets) |
 | 5. Empty wardrobe completes | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
-| _Diagnostic, not one of the five: fit cards that read as a seller's post_ | none wanted | | | | | | **29 of 40 cards** |
+| _Diagnostic, not one of the five: fit cards that read as a seller's post_ | none wanted |  |  |  |  |  | **29 of 40 cards** |
 
-† Passed on indirect evidence only: the selected item's title appears in the outfit suggestion in all five tries. The trace does not show the id (see Diagnoses).
+`n/m` = not measurable: in this run the trace printed `item_id` as "dict with keys: …", so there was nothing to compare. Marking those PASS (as I first did) overstated what the log showed. Criterion 4 is scored per set: Try k is the five cards produced in try k for five different items (graphic tee, track jacket, platform sneakers, slip dress, denim jacket).
 
-Source: `results/run_2026-10-25_2212_before.md`, scored with a script that reads that file. The model-based checks (sentence count, price, platform) are string checks, so a price written as "thirty bucks" fails the price check even though it is present; I checked by hand where a score looked odd.
+Source: `results/run_2026-10-25_2212_before.md`, scored by a script that reads the file. The checks for sentence count, price and platform are string checks, so I hand-checked any card the script failed: one price written as "thirty bucks" counts, and a card with no sentence-ending punctuation counts as one sentence.
 
 **Real output from one try** — `run_eval.py` calling `agent.py::run_agent`, whose last step is `tools.py::create_fit_card`. Query: `vintage graphic tee under $30`, example wardrobe.
 
@@ -269,11 +269,13 @@ Found this absolute gem of a butterfly print Y2K baby tee and I am obsessed. Sna
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 | Matching query completes all three tools | 4 of 5 | MET (5/5) | `session["error"]` was None and `fit_card` non-empty in all five tries of 'vintage graphic tee under $30'. |
-| 2 | Impossible query stops before the second tool | 5 of 5 | MET (5/5) | In all five tries the trace holds only `search_listings` then `branch`, and the error text names what to change ("raise your price limit", "try a different size"). |
-| 3 | Same item reaches every tool | 5 of 5 | NOT VERIFIABLE as written | The criterion says to compare ids. The trace prints `item_id` as "dict with keys: item_id, wardrobe_items", so the id is hidden. All five outfit suggestions name the selected item, which is indirect evidence only. (Trace fixed afterwards; see Still Broken.) |
-| 4 | Fit card across 5 items | 4 of 5, no shared opener | MET (5/5) | Try 1 of each of five items: all 2–4 sentences, all state price and platform, five different first sentences. |
-| 5 | Empty wardrobe completes | 5 of 5 | MET (5/5) | All five completed with a non-empty card and named no wardrobe piece. |
+| 1 | Matching query completes all three tools | 4 of 5 | MET (5/5) in all three logs | `session["error"]` None and `fit_card` non-empty in every try of 'vintage graphic tee under $30'. |
+| 2 | Impossible query stops before the second tool | 5 of 5 | MET (5/5) in all three logs | Every trace has only `search_listings` then `branch`, and the error text names what to change; `fit_card` is None. |
+| 3 | Same item reaches every tool | 5 of 5 | Before/after: NOT MEASURABLE. Final: MET (5/5) | The first two logs hid `item_id`, so I could not compare ids. After the trace printed ids, all five tries showed one id at all three steps. |
+| 4 | Fit cards for 5 items | each set: ≥4 of 5 cards pass, no shared opener | Before: MET (5/5 sets). After: MISSED once (4/5 sets). Final: MET (5/5 sets) | Per try, I counted cards with 2–4 sentences, the price and the platform, and checked the five first sentences were different. In the after log, try 2 had two cards opening "Score!". |
+| 5 | Empty wardrobe completes | 5 of 5 | MET (5/5) in all three logs | Non-empty outfit and card, and no wardrobe piece named, in every try. |
+
+My first write-up scored criterion 4 on try 1 only and said "5/5". Scoring all five tries is what exposed the try-2 miss.
 
 **Diagnoses**
 
@@ -282,6 +284,13 @@ Found this absolute gem of a butterfly print Y2K baby tee and I am obsessed. Sna
 - **Where:** the model's output, in `tools.py::create_fit_card`. The tool ran correctly and the loop passed the right item.
 - **Mechanism:** the prompt gave the model `Price: $18` and `Platform: depop` as bare fields and said only "a thrift find". Price plus platform is the shape of a listing, so the model wrote the caption as the person who posted it. The prompt never said who the poster is.
 - **Criterion 3:** the loop does pass the right item (the outfit names it every time), but I cannot prove it from the trace, because `trace._short` collapses a dict without a `title` into its key names. That is a gap in my measurement, not a failure I can show in the tool.
+
+**The one criterion miss — criterion 4, after run, try 2.**
+- **Where:** the model's output from `tools.py::create_fit_card`. The tool ran correctly and the loop passed different items.
+- **Mechanism:** the prompt says nothing about varying how a caption begins, and "like a real post" pulls the model toward a few templates ("Score!", "Just scored this…", "Found the ultimate…"). Temperature is 0.9, so each card draws one of those openers more or less at random. With five cards in a set, two draws of "Score!" sometimes collide, and in try 2 items B and E did.
+- **Not caused by the prompt rewrite, as far as I can tell.** Before the rewrite "Found the ultimate" opened 9 of 40 cards; afterwards the most common opener ("Just scored this") opened 5 of 40. The earlier run was more repetitive and just never collided inside one set. One collision in 5 sets is too few to say the rewrite changed the rate.
+
+**Target set too low, and the tighter one.** Criterion 4 only forbids shared openers *within a set of five items*, and it never asks whether the caption is in the right voice. Both gaps let bad output pass. A tighter version: *"In 5 of 5 sets of 5 cards, 0 of 5 read as the seller, and no 3-word opening phrase appears in more than 2 of the 25 cards."* I scored the opener half of it on the 25 criterion-4 cards in each log: the most common 3-word opener appears in 5 cards (before, "Found the ultimate"), 4 cards (after, "Score!") and 4 cards (final, "Just scored this"). The limit is 2, so the tighter target is missed in all three logs, which is what I would want from a target that was too low before. The seller-voice half is met in the after and final logs (0 of 40) and missed in the before log (29 of 40). I added it as a revision under criterion 4 in `criteria.md`, without editing the original.
 
 ---
 
@@ -348,14 +357,14 @@ The empty trace has two steps and the happy one has three, and the empty run mad
 |---|---|---|---|---|---|---|---|
 | 1. A matching query completes all three tools | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
 | 2. An impossible query stops before the second tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
-| 3. Same item reaches every tool | 5 of 5 | PASS† | PASS† | PASS† | PASS† | PASS† | NOT VERIFIABLE as written |
-| 4. Fit card across 5 items (columns are items A–E, try 1 of each) | 4 of 5, no shared opener | PASS | PASS | PASS | PASS | PASS | MET (5/5, 5 distinct openers) |
+| 3. Same item reaches every tool | 5 of 5 | n/m | n/m | n/m | n/m | n/m | NOT MEASURABLE (ids hidden in trace) |
+| 4. Fit cards for 5 items (each Try = the 5 items' cards from that try) | each set: ≥4 of 5 cards pass; no shared opener | PASS | FAIL | PASS | PASS | PASS | MISSED once (4/5 sets) |
 | 5. Empty wardrobe completes | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
-| _Diagnostic: fit cards that read as a seller's post_ | none wanted | | | | | | **0 of 40 cards** |
+| _Diagnostic, not one of the five: fit cards that read as a seller's post_ | none wanted |  |  |  |  |  | **0 of 40 cards** |
 
-Source: `results/run_2026-10-25_2218_after.md`.
+Source: `results/run_2026-10-25_2218_after.md`. Try 2 failed criterion 4: items B (track jacket) and E (denim jacket) both opened with "Score!".
 
-**Did it help, and how do I know:** Yes, on the thing it targeted. Seller-framed cards went from 29 of 40 to 0 of 40, counted with the same pattern list on the same 40 cards (8 scenarios that reach the fit card, 5 tries each). A caption now reads "Finally scored this Y2K butterfly print baby tee on Depop for just $18 and I am obsessed" where before it said "Snag it on my Depop right now". The five criteria did not move, because they were already met.
+**Did it help, and how do I know:** It fixed the problem it targeted and did not clearly change anything else. Seller-framed cards went from 29 of 40 to 0 of 40, counted with the same pattern list on the same 40 cards (8 scenarios that reach the fit card, 5 tries each); a caption now reads "Finally scored this Y2K butterfly print baby tee on Depop for just $18 and I am obsessed" where before it said "Snag it on my Depop right now". The five criteria did not improve, because they were already met. One of them, criterion 4, scored one miss in the after run (4 of 5 sets), which I traced to opener collisions rather than to the rewrite (see Diagnoses). The rerun on the final code went back to 5 of 5 sets, which also tells me that miss is run-to-run noise, not a regression I can pin on the change.
 
 What I can't claim:
 - **My counter is a pattern list, not a reader.** It could miss a seller-sounding caption phrased in a way I didn't list. I read a sample by hand and found none, but 0 of 40 means "none matched my patterns".
@@ -365,16 +374,31 @@ What I can't claim:
 
 
 
+### Run Log — Final (rerun on the finished code)
+
+Rerun after the MCP move and after the trace was changed to print item ids. Same scenarios and scorer, nothing else changed since the "after" run.
+
+| Criterion | Target | Try 1 | Try 2 | Try 3 | Try 4 | Try 5 | Verdict |
+|---|---|---|---|---|---|---|---|
+| 1. A matching query completes all three tools | 4 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 2. An impossible query stops before the second tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 3. Same item reaches every tool | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| 4. Fit cards for 5 items (each Try = the 5 items' cards from that try) | each set: ≥4 of 5 cards pass; no shared opener | PASS | PASS | PASS | PASS | PASS | MET (5/5 sets) |
+| 5. Empty wardrobe completes | 5 of 5 | PASS | PASS | PASS | PASS | PASS | MET (5/5) |
+| _Diagnostic, not one of the five: fit cards that read as a seller's post_ | none wanted |  |  |  |  |  | **0 of 40 cards** |
+
+Source: `results/run_2026-10-25_2248_final.md`. Criterion 3 is now measured: in all five tries the id printed after `search_listings (via MCP)` ("first result id: lst_004") equals the `item_id` printed in the `suggest_outfit` step and in the `create_fit_card` step.
+
 ---
 
 ## What's Still Broken
 
-- **Criterion 3 was unverifiable in both run logs; the trace is fixed but the runs are not redone.** `trace._short` hid `item_id`, so the before and after logs only show the item's title in the outfit. After the logs, I changed `agent.py` to print the ids as text (`first result id: lst_002`, then `item_id=lst_002` in both later steps) and added a revision under criterion 3 in `criteria.md`; I checked one run by eye, and the three ids matched. I have not rerun `run_eval.py`, so the 5-of-5 count for criterion 3 is still not measured.
-- **My criteria don't test point of view.** Criterion 4 checks length, price, platform and distinct openers, so it passed a set of cards that were wrong for the user. I'd add "no caption reads as the seller" with a count.
+- **Criterion 3 was unmeasurable in two of the three logs.** The before and after logs predate the trace change, so their criterion 3 cells are `n/m`. The final log measures it (5 of 5). I did not rerun the before and after logs, because rerunning would change their meaning.
+- **My criteria don't test point of view.** Criterion 4 passed a set of cards that were wrong for the user. I wrote the tighter target (0 of 5 seller-voice, no opener in more than 2 of 25 cards) as a revision under criterion 4, but I scored it afterwards: the opener rule is missed in all three logs (top opener in 5, 4 and 4 of 25 cards, limit 2), so openers are still too repetitive and I have not fixed that.
 - **Repeated openers.** Across the 40 after-run cards, a few captions still open with the same words (see above). I'd raise the variety in the prompt, but didn't, to keep this to one change.
 - **The empty-search message is generic.** It names the description, size and price that were searched and suggests loosening each one that was set, but it can't say *which* of them caused the miss. I haven't tested whether users find it useful.
 - **Failure modes.** Empty search and empty wardrobe are covered by criteria 2 and 5. For the model being unavailable I set a wrong key for one command (`GEMINI_API_KEY=not-a-real-key python app.py ask ... --trace`, `.env` untouched). The run stopped with "The model rejected your API key…" and no stack trace. One caveat: `suggest_outfit` still ran at step 2 because its prompt was already cached, so the failure appeared at step 3 (`create_fit_card`, which bypasses the cache). I only triggered the bad key once, for `GEMINI_API_KEY`, and not a network failure or a missing model name.
-- **Run logs predate the MCP move.** Rerunning `run_eval.py` would show whether the MCP path changes any criterion. I haven't done it.
+- **Before/after logs predate the MCP move; the final log doesn't.** The one-change comparison (before vs after) was run with a direct `search_listings` call. The final log runs on MCP and shows no criterion changing.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 

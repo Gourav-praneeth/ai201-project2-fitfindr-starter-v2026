@@ -63,6 +63,10 @@ The wording can vary, but the facts can't. A caption missing the price or platfo
 
 
 
+> **Revised in unit 4:** In 5 of 5 sets of 5 fit cards (one set per try, five different items), 0 of 5 cards read as the seller ("listed", "my shop", "grab it") and no 3-word opening phrase appears in more than 2 of the 25 cards. Each set still has the original requirements: 2–4 sentences, the price, and the platform in at least 4 of 5 cards, and no shared first sentence.
+>
+> **Why revised:** The original measured the wrong thing. It checked length, price and platform, so a set of captions written in the seller's voice passed (29 of 40 cards in my before run), and it only compared first sentences inside one set, so a repeated opener was invisible. This is not a lowered target: it is stricter. I scored it afterwards: the opener rule is missed in all three logs, with the top opener in 5, 4 and 4 of 25 cards against a limit of 2.
+
 ---
 
 ## 5. Your choice
