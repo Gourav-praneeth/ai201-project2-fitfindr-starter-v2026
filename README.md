@@ -271,7 +271,7 @@ Found this absolute gem of a butterfly print Y2K baby tee and I am obsessed. Sna
 |---|---|---|---|---|
 | 1 | Matching query completes all three tools | 4 of 5 | MET (5/5) | `session["error"]` was None and `fit_card` non-empty in all five tries of 'vintage graphic tee under $30'. |
 | 2 | Impossible query stops before the second tool | 5 of 5 | MET (5/5) | In all five tries the trace holds only `search_listings` then `branch`, and the error text names what to change ("raise your price limit", "try a different size"). |
-| 3 | Same item reaches every tool | 5 of 5 | NOT VERIFIABLE as written | The criterion says to compare ids. The trace prints `item_id` as "dict with keys: item_id, wardrobe_items", so the id is hidden. All five outfit suggestions name the selected item, which is indirect evidence only. |
+| 3 | Same item reaches every tool | 5 of 5 | NOT VERIFIABLE as written | The criterion says to compare ids. The trace prints `item_id` as "dict with keys: item_id, wardrobe_items", so the id is hidden. All five outfit suggestions name the selected item, which is indirect evidence only. (Trace fixed afterwards; see Still Broken.) |
 | 4 | Fit card across 5 items | 4 of 5, no shared opener | MET (5/5) | Try 1 of each of five items: all 2–4 sentences, all state price and platform, five different first sentences. |
 | 5 | Empty wardrobe completes | 5 of 5 | MET (5/5) | All five completed with a non-empty card and named no wardrobe piece. |
 
@@ -369,7 +369,7 @@ What I can't claim:
 
 ## What's Still Broken
 
-- **Criterion 3 can't be verified from the trace.** `trace._short` prints a dict without a `title` as its key names, so `item_id` never shows. The fix is one line (pass the id as a string, or put it in `note`). I left it because the milestone allows one change and the diagnosis that mattered was the caption. I'd also add the revision underneath criterion 3 in `criteria.md` rather than editing the original.
+- **Criterion 3 was unverifiable in both run logs; the trace is fixed but the runs are not redone.** `trace._short` hid `item_id`, so the before and after logs only show the item's title in the outfit. After the logs, I changed `agent.py` to print the ids as text (`first result id: lst_002`, then `item_id=lst_002` in both later steps) and added a revision under criterion 3 in `criteria.md`; I checked one run by eye, and the three ids matched. I have not rerun `run_eval.py`, so the 5-of-5 count for criterion 3 is still not measured.
 - **My criteria don't test point of view.** Criterion 4 checks length, price, platform and distinct openers, so it passed a set of cards that were wrong for the user. I'd add "no caption reads as the seller" with a count.
 - **Repeated openers.** Across the 40 after-run cards, a few captions still open with the same words (see above). I'd raise the variety in the prompt, but didn't, to keep this to one change.
 - **The empty-search message is generic.** It names the description, size and price that were searched and suggests loosening each one that was set, but it can't say *which* of them caused the miss. I haven't tested whether users find it useful.

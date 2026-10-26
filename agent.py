@@ -167,7 +167,10 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                     "max_price": parsed["max_price"],
                 })
                 session["search_results"] = results
-                trace.step("search_listings (via MCP)", inputs=parsed, returned=results)
+                trace.step(
+                    "search_listings (via MCP)", inputs=parsed, returned=results,
+                    note=f"first result id: {results[0]['id']}" if results else "",
+                )
 
                 # THE BRANCH: nothing found means stop here, before any model call.
                 if not results:
@@ -183,7 +186,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                 session["outfit_suggestion"] = suggest_outfit(item, session["wardrobe"])
                 trace.step(
                     "suggest_outfit",
-                    inputs={"item_id": item["id"], "wardrobe_items": len(session["wardrobe"].get("items", []))},
+                    inputs=f"item_id={item['id']}, wardrobe_items={len(session['wardrobe'].get('items', []))}",
                     returned=session["outfit_suggestion"],
                 )
                 next_tool = "create_fit_card"
@@ -193,7 +196,7 @@ def run_agent(query: str, wardrobe: dict) -> dict:
                 session["fit_card"] = create_fit_card(session["outfit_suggestion"], item)
                 trace.step(
                     "create_fit_card",
-                    inputs={"item_id": item["id"]},
+                    inputs=f"item_id={item['id']}",
                     returned=session["fit_card"],
                 )
                 next_tool = None

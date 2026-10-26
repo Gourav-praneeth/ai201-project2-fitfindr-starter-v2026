@@ -48,6 +48,10 @@ In 5 of 5 successful runs, `session["selected_item"]["id"]` equals the `id` of t
 
 
 
+> **Revised in unit 4:** In 5 of 5 successful runs, the `item_id` printed in the `suggest_outfit` trace step and in the `create_fit_card` trace step both equal the `first result id` printed in the `search_listings (via MCP)` step. A reader checks it by running `python app.py ask 'vintage graphic tee under $30' --trace` and comparing three printed ids.
+>
+> **Why revised:** The original could not be measured from the trace. `trace.py` prints a dict without a title as its key names ("dict with keys: item_id, wardrobe_items"), so the id never appeared, and I could only show indirectly that the outfit named the item. I changed the loop to print the ids as text, and the revised version is something a reader can score without access to my code. The target (5 of 5) is unchanged.
+
 ---
 
 ## 4. Something about the fit card
