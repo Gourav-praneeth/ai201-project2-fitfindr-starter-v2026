@@ -163,9 +163,9 @@ Tuck a fitted black ribbed tank top or a sleek bodysuit into the waistband. Add 
 
 ```
 $ python -c "from tools import create_fit_card; from utils.data_loader import load_listings; [print(create_fit_card('jeans and white sneakers', load_listings()[0])) for _ in range(3)]"
-Nothing beats the effortless 90s off-duty model vibe of a truly broken-in pair of vintage Levi's 501 jeans. Just scored this dreamy medium wash on depop for $38 and I'm pairing them with crisp white sneakers and a beat-up leather jacket all fall. 🤌✨
-Nothing beats the hunt for the ultimate pair of vintage Levi's 501 jeans, especially when you score them for just $38. Channeling that effortless 90s model-off-duty vibe—just add a crisp white tee and retro sneakers for the absolute easiest everyday uniform. Up now on my depop, so grab them before I change my mind and keep them!
-Nothing beats that worn-in 90s slouch. Just scored these vintage Levi's 501 jeans in the perfect medium wash on depop for $38, and they are about to become my entire personality. Honestly, just add crisp white sneakers and an oversized tee for the ultimate effortlessly cool off-duty model vibe. ✨👖
+Scored these vintage Levi's 501 jeans on Depop for just $38 and I am never taking them off. The medium wash has that perfectly broken-in 90s slouch that you just can't fake. Throwing them on with crisp white sneakers for that effortlessly cool Sunday morning farmer's market vibe.
+Scored these vintage Levi's 501 jeans on Depop for just $38 and I am never taking them off. The medium wash is seriously *chef's kiss* and has that perfect broken-in 90s slouch. Just threw them on with my crisp white sneakers for the ultimate effortless weekend uniform.
+Can't believe I snagged these vintage Levi's 501 jeans on Depop for only $38! The medium wash is seriously unmatched for that effortless 90s off-duty vibe. Honestly, I'm never taking them off—just gonna live in these with my favorite white sneakers from here on out.
 
 $ python -c "...create_fit_card('  ', load_listings()[0])"
 No outfit to write a caption for.

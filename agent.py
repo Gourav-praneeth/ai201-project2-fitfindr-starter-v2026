@@ -161,24 +161,24 @@ def run_agent(query: str, wardrobe: dict) -> dict:
             trace.check_iterations(count)
 
             if next_tool == "search_listings":
-                results = call_tool("search_listings", {
+                session["search_results"] = call_tool("search_listings", {
                     "description": parsed["description"],
                     "size": parsed["size"],
                     "max_price": parsed["max_price"],
                 })
-                session["search_results"] = results
+                found = session["search_results"]
                 trace.step(
-                    "search_listings (via MCP)", inputs=parsed, returned=results,
-                    note=f"first result id: {results[0]['id']}" if results else "",
+                    "search_listings (via MCP)", inputs=parsed, returned=found,
+                    note=f"first result id: {found[0]['id']}" if found else "",
                 )
 
                 # THE BRANCH: nothing found means stop here, before any model call.
-                if not results:
+                if not session["search_results"]:
                     session["error"] = _no_results_message(parsed)
                     trace.step("branch", note="search returned [] — stopping before suggest_outfit")
                     next_tool = None
                 else:
-                    session["selected_item"] = results[0]
+                    session["selected_item"] = session["search_results"][0]
                     next_tool = "suggest_outfit"
 
             elif next_tool == "suggest_outfit":
