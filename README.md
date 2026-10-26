@@ -169,15 +169,21 @@ No outfit to write a caption for.
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Claude Code wrote `search_listings`, `suggest_outfit` and `create_fit_card` from the spec in my Tool Inventory.
+- *What came back:* Working tools that matched the spec, with one problem I caught before testing: `generate()` caches identical prompts, so `create_fit_card` would have returned the same caption on repeated calls, which my fit card criterion forbids.
+- *What I changed:* `create_fit_card` calls `generate(..., cache=False)`. I confirmed three runs on one item gave three different captions.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Run the five criteria five times each and score them, then pick one improvement from the diagnosis.
+- *What came back:* All five criteria met (criterion 3 unverifiable), but when the cards were read, 29 of 40 sounded like the seller ("up now on my Depop"). A first scoring pass also wrongly reported that criterion 2 failed, because the word "suggest_outfit" appeared in the branch note; checking the actual step list showed it never ran.
+- *What I changed:* One prompt in `create_fit_card` so the poster is the buyer. Seller-style cards went from 29 of 40 to 0 of 40. I also added a note that the counter is a pattern list and not a reader.
+
+**Other things worth knowing**
+
+- Claude Code also drafted my criteria 3–5 and the "why this target" lines for all five. The brief says to write criteria yourself and use a model to attack them; I asked Claude to write them directly, so those words are not originally mine.
+- I only had a Gemini key. Claude first added a Groq provider to `generate.py`, found the default model wasn't available on my account, and then removed the whole Groq change when I said I would use Gemini.
+- Claude wrote the loop, the MCP registration and the README logs. The run logs are real output from `run_eval.py`, in `results/`.
 
 <!-- ═══════════════════════ UNIT 4 — THE TEST ═══════════════════════
 
@@ -276,24 +282,37 @@ Found this absolute gem of a butterfly print Y2K baby tee and I am obsessed. Sna
      the same length, your branch isn't working — and this is the fastest way
      anyone will ever find that out. -->
 
-**Happy path**
+**Happy path** (`python app.py ask 'vintage graphic tee under $30' --trace`)
 
 ```
-
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: 10 items: Y2K Baby Tee — Butterfly Print, Graphic Tee — 2003 Tour Bootleg Style, Vintage Band Tee — Faded Grey … +7 more
+[2] suggest_outfit
+      in:  dict with keys: item_id, wardrobe_items
+      out: **Outfit 1: Y2K Streetwear** Pair the Y2K Baby Tee — Butterfly Print with the baggy straight-leg jeans, dark w…
+[3] create_fit_card
+      in:  dict with keys: item_id
+      out: Found the absolute cutest Y2K baby tee with the dreamiest butterfly print on Depop for just $18! I’m already p…
 ```
 
-**Empty search**
+**Empty search** (`python app.py ask 'designer ballgown size XXS under $5' --trace`)
 
 ```
+[1] search_listings (via MCP)
+      in:  dict with keys: description, size, max_price
+      out: [] (empty)
+[2] branch
+      →    search returned [] — stopping before suggest_outfit
 
+  Nothing matched 'designer ballgown', size XXS, under $5. To get results, use fewer or more general keywords, or try a different size or leave size out, or raise your price limit.
+
+0 model calls this session
 ```
 
-**On the MCP move:** <!-- what changed in your code, and whether anything
-behaved differently afterwards. If the rewire didn't work, say exactly where it
-broke — the error text and the last thing that worked. That earns the point in
-full. -->
+The empty trace has two steps and the happy one has three, and the empty run made 0 model calls.
 
-
+**On the MCP move:** `search_listings` is registered as a tool in `mcp_server.py`, with a description that states units, the size-matching rule and the empty case. In `agent.py::run_agent` the direct call became `call_tool("search_listings", {...})` from `mcp_client.py`, and the trace step is named `search_listings (via MCP)`. The return value did not change: for six queries (including `designer ballgown`, size XXS, under $5) the direct and MCP results were equal as Python values (`direct == via`), and the empty case came back as `[]`, not `None`, so the branch still fires. Behaviour that did change: each call now starts and stops a server process, so a search is slower. I did not time it. **The two run logs above were both recorded before this move, with the direct call.** I checked the MCP path with the traces here and the six-query comparison, but did not rerun `run_eval.py` after it.
 
 ---
 
@@ -339,7 +358,8 @@ What I can't claim:
 - **My criteria don't test point of view.** Criterion 4 checks length, price, platform and distinct openers, so it passed a set of cards that were wrong for the user. I'd add "no caption reads as the seller" with a count.
 - **Repeated openers.** Across the 40 after-run cards, a few captions still open with the same words (see above). I'd raise the variety in the prompt, but didn't, to keep this to one change.
 - **The empty-search message is generic.** It names the description, size and price that were searched and suggests loosening each one that was set, but it can't say *which* of them caused the miss. I haven't tested whether users find it useful.
-- **Not done in this milestone:** the MCP move, the three failure modes, and the Loop Trace section. Those belong to earlier steps of this unit and are still empty in the README.
+- **Failure modes.** Empty search and empty wardrobe are covered by criteria 2 and 5. For the model being unavailable I set a wrong key for one command (`GEMINI_API_KEY=not-a-real-key python app.py ask ... --trace`, `.env` untouched). The run stopped with "The model rejected your API key…" and no stack trace. One caveat: `suggest_outfit` still ran at step 2 because its prompt was already cached, so the failure appeared at step 3 (`create_fit_card`, which bypasses the cache). I only triggered the bad key once, for `GEMINI_API_KEY`, and not a network failure or a missing model name.
+- **Run logs predate the MCP move.** Rerunning `run_eval.py` would show whether the MCP path changes any criterion. I haven't done it.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
