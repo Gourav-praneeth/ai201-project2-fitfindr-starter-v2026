@@ -99,9 +99,9 @@
 
 **Where it lives:** `agent.py::run_agent`
 
-**How the query is parsed:** <!-- regex, string splitting, or asking the model — say which -->
+**How the query is parsed:** Regex, in `agent.py::parse_query`. A price is "under/below/less than/up to/max N" or "$N". A size is "size X" (optionally "in size X"). What is left becomes the description. It makes no model call and gives the same answer every time.
 
-**What moves through the session:** <!-- which fields, in what order -->
+**What moves through the session:** `query`, then `parsed` (description, size, max_price), then `search_results`, then `selected_item` (the first result), then `outfit_suggestion`, then `fit_card`. `error` stays None unless the run stops early. The loop in `run_agent` runs one tool per pass, reads what came back, and chooses the next tool. Each pass calls `trace.check_iterations`. A `ModelUnavailable` from either model tool is caught and put in `session["error"]`.
 
 ---
 

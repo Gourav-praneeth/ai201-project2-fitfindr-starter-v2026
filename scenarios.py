@@ -29,24 +29,32 @@ SCENARIOS = [
         "criterion": 2,
     },
     {
-        # A user with nothing saved. One of unit 4's three failure modes.
-        "name": "empty wardrobe",
-        "query": "denim jacket under $50",
-        "wardrobe": "empty",
-        "criterion": None,
+        # Criterion 3 — state. Checked from the trace: the item_id passed to
+        # suggest_outfit and create_fit_card must equal the first search result.
+        "name": "state: same item reaches every tool",
+        "query": "90s track jacket in size M",
+        "wardrobe": "example",
+        "criterion": 3,
     },
-    # TODO: add what your criteria 3, 4 and 5 need.
-    #
-    # Set "criterion" to the number in criteria.md that the scenario tests.
-    # "criterion": None means a diagnostic run — useful to have, but it isn't
-    # one of your five, and run_eval.py marks it as such in the table.
-    #
-    # For a state criterion, any normal query works — what you're checking is
-    # what ends up in the session, not what the user typed.
-    #
-    # For a fit-card criterion, you probably want the SAME query listed more
-    # than once, or several different items, depending on what your criterion
-    # actually says.
+    # Criterion 4 — fit card across five different items. One scenario per
+    # item; try 1 of each is the five cards the criterion scores.
+    {"name": "fit card item A: graphic tee", "query": "vintage graphic tee under $30",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "fit card item B: track jacket", "query": "90s track jacket in size M",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "fit card item C: platform sneakers", "query": "platform sneakers size 8",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "fit card item D: slip dress", "query": "silk slip dress in midi length under $40",
+     "wardrobe": "example", "criterion": 4},
+    {"name": "fit card item E: denim jacket", "query": "denim jacket under $50",
+     "wardrobe": "example", "criterion": 4},
+    {
+        # Criterion 5 — empty wardrobe still completes with a fit card.
+        "name": "empty wardrobe completes",
+        "query": "vintage graphic tee under $30",
+        "wardrobe": "empty",
+        "criterion": 5,
+    },
 ]
 
 WARDROBES = ("example", "empty")

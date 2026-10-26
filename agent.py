@@ -13,10 +13,52 @@ Build and test your three tools in `tools.py` first. Then come here.
     python agent.py          runs both example paths below
 """
 
+import re
+
 import config
 import trace
 from tools import search_listings, suggest_outfit, create_fit_card
 from generate import ModelUnavailable
+
+
+# ── query parsing ─────────────────────────────────────────────────────────────
+# Regex, not the model: size and price follow a few fixed phrasings, a regex
+# costs no model call, and it gives the same answer every time.
+
+_PRICE = re.compile(r"(?:under|below|less than|up to|max|at most)\s*\$?\s*(\d+(?:\.\d+)?)|\$\s*(\d+(?:\.\d+)?)", re.I)
+_SIZE = re.compile(r"\b(?:in\s+)?size\s+([A-Za-z0-9.]+(?:/[A-Za-z0-9.]+)?)", re.I)
+
+
+def parse_query(query: str) -> dict:
+    """Pull description, size and max_price out of a plain-language query."""
+    max_price = None
+    price = _PRICE.search(query)
+    if price:
+        max_price = float(price.group(1) or price.group(2))
+        query = query.replace(price.group(0), " ")
+
+    size = None
+    found = _SIZE.search(query)
+    if found:
+        size = found.group(1)
+        query = query.replace(found.group(0), " ")
+
+    description = re.sub(r"[,;]+", " ", query)
+    description = " ".join(description.split())
+    return {"description": description, "size": size, "max_price": max_price}
+
+
+def _no_results_message(parsed: dict) -> str:
+    """Say what was searched and what the user could loosen."""
+    tried = [f"'{parsed['description']}'"]
+    changes = ["use fewer or more general keywords"]
+    if parsed["size"]:
+        tried.append(f"size {parsed['size']}")
+        changes.append("try a different size or leave size out")
+    if parsed["max_price"] is not None:
+        tried.append(f"under ${parsed['max_price']:.0f}")
+        changes.append("raise your price limit")
+    return f"Nothing matched {', '.join(tried)}. To get results, " + ", or ".join(changes) + "."
 
 
 # ── session state ─────────────────────────────────────────────────────────────
@@ -106,9 +148,57 @@ def run_agent(query: str, wardrobe: dict) -> dict:
         than a stack trace. The import is already at the top of this file.
     """
     session = new_session(query, wardrobe)
+    session["parsed"] = parse_query(query)
+    parsed = session["parsed"]
 
-    # TODO: delete these two lines and build the loop.
-    session["error"] = "The planning loop isn't built yet — see the TODO in agent.py."
+    # Each pass runs one tool, looks at what came back, and picks the next one.
+    next_tool = "search_listings"
+    count = 0
+    try:
+        while next_tool:
+            count += 1
+            trace.check_iterations(count)
+
+            if next_tool == "search_listings":
+                results = search_listings(
+                    parsed["description"], size=parsed["size"], max_price=parsed["max_price"]
+                )
+                session["search_results"] = results
+                trace.step("search_listings", inputs=parsed, returned=results)
+
+                # THE BRANCH: nothing found means stop here, before any model call.
+                if not results:
+                    session["error"] = _no_results_message(parsed)
+                    trace.step("branch", note="search returned [] — stopping before suggest_outfit")
+                    next_tool = None
+                else:
+                    session["selected_item"] = results[0]
+                    next_tool = "suggest_outfit"
+
+            elif next_tool == "suggest_outfit":
+                item = session["selected_item"]
+                session["outfit_suggestion"] = suggest_outfit(item, session["wardrobe"])
+                trace.step(
+                    "suggest_outfit",
+                    inputs={"item_id": item["id"], "wardrobe_items": len(session["wardrobe"].get("items", []))},
+                    returned=session["outfit_suggestion"],
+                )
+                next_tool = "create_fit_card"
+
+            elif next_tool == "create_fit_card":
+                item = session["selected_item"]
+                session["fit_card"] = create_fit_card(session["outfit_suggestion"], item)
+                trace.step(
+                    "create_fit_card",
+                    inputs={"item_id": item["id"]},
+                    returned=session["fit_card"],
+                )
+                next_tool = None
+
+    except ModelUnavailable as exc:
+        session["error"] = f"The model couldn't be reached, so the run stopped. {exc}"
+        trace.step("model unavailable", note=str(exc))
+
     return session
 
 
